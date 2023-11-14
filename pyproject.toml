@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "aussieaddress"
+version = "0.1.0"
+description = "Address Matching for Australian Addresses. Compare Address A to Address B and receive a boolean of match and threshold score"
+authors = ["Jack Jorgensen <jorgensen.jack@gmail.com>"]
+license = "BSD 3-Clause License"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fuzzywuzzy = "^0.18.0"
+python-levenshtein = "^0.23.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
