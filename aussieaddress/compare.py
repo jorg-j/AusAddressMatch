@@ -1,15 +1,29 @@
 # %%
 import re
-from typing import Tuple
+import string
 from functools import lru_cache
+from typing import Tuple
 
 from fuzzywuzzy import fuzz
 
+
 # %%
 def _clean_str(in_string: str, remove: list) -> str:
-    for item in remove:
-        in_string = in_string.replace(item, "").strip()
-    return in_string
+    """
+    The function `_clean_str` takes a string and a list of items to remove, 
+    and returns the string with
+    those items removed and any leading or trailing whitespace stripped.
+
+    >>> _clean_str("This is a test", ["is", "a"])
+    'This test'
+    """
+    expr = r"\b(?:" + "|".join(re.escape(word.lower())for word in remove) + r")\b"
+    outstring = re.sub(expr, "", in_string)
+    while "  " in outstring:
+        outstring = outstring.replace("  ", " ")
+    return outstring.strip()
+
+_clean_str("This is a test", ["is", "a"])
 
 # %%
 def postcode_match(address1: str, address2: str) -> Tuple[str, str, bool]:
@@ -57,12 +71,14 @@ def postcode_match(address1: str, address2: str) -> Tuple[str, str, bool]:
         )
     return address1, address2, False
 
+
 # %%
 @lru_cache(maxsize=50)
 def locate_state(address: str, state: str) -> bool:
     phrase = r"\b" + state + r"\b"
     matches = re.findall(phrase, address)
     return len(matches) > 0
+
 
 # %%
 def state_match(address1: str, address2: str) -> Tuple[str, str, bool]:
@@ -117,5 +133,3 @@ def state_match(address1: str, address2: str) -> Tuple[str, str, bool]:
                 cleaned_address2 = _clean_str(address_lower2, [state, alter])
                 return cleaned_address1, cleaned_address2, True
     return address_lower1, address_lower2, False
-
-
