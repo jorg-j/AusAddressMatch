@@ -23,7 +23,6 @@ def _clean_str(in_string: str, remove: list) -> str:
         outstring = outstring.replace("  ", " ")
     return outstring.strip()
 
-_clean_str("This is a test", ["is", "a"])
 
 # %%
 def postcode_match(address1: str, address2: str) -> Tuple[str, str, bool]:
