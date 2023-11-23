@@ -14,8 +14,8 @@ class Address:
         self.address2 = address2
 
         self.threshold = 75
-        self.postcode = True
-        self.state = True
+        self.postcode_check = True
+        self.state_check = True
 
         self.postcode_result = None
         self.state_result = None
@@ -24,11 +24,16 @@ class Address:
         self.address1_result = ""
         self.address2_result = ""
 
-        self.match = False
+        self.matched = False
         self.score = 0
 
         self.set_defaults()
-# %%
+
+    def __str__(self):
+        for k, v in vars(self).items():
+            print(f"{k}: {v}")
+
+
     def set_defaults(self):
         self.abbreviated_states = ["qld", "nsw", "act", "vic", "tas", "sa", "wa", "nt"]
         self.state_names = [
@@ -61,7 +66,7 @@ class Address:
 
 
 
-    def _clean_str(in_string: str, remove: list) -> str:
+    def _clean_str(self, in_string: str, remove: list) -> str:
         """
         The function `_clean_str` takes a string and a list of items to remove,
         and returns the string with
@@ -78,7 +83,6 @@ class Address:
 
 
     # %%
-    @staticmethod
     def postcode_match(self, address1: str, address2: str) -> Tuple[str, str, bool]:
         """
         Takes two addresses as input and checks if the last postcode in the
@@ -127,7 +131,7 @@ class Address:
 
     # %%
     @lru_cache(maxsize=50)
-    def locate_state(address: str, state: str) -> bool:
+    def locate_state(self, address: str, state: str) -> bool:
         phrase = r"\b" + state + r"\b"
         matches = re.findall(phrase, address)
         return len(matches) > 0
@@ -166,25 +170,26 @@ class Address:
         address_lower2 = address2.lower()
 
         for state in extended_states:
-            if Address.locate_state(address=address_lower1, state=state):
+            if self.locate_state(address=address_lower1, state=state):
                 alter = lookup_array.get(state, "FAULT")
                 if state in address_lower2 or alter in address_lower2:
-                    cleaned_address1 = Address._clean_str(address_lower1, [state, alter])
-                    cleaned_address2 = Address._clean_str(address_lower2, [state, alter])
+                    cleaned_address1 = self._clean_str(address_lower1, [state, alter])
+                    cleaned_address2 = self._clean_str(address_lower2, [state, alter])
                     return cleaned_address1, cleaned_address2, True
         return address_lower1, address_lower2, False
     
 
-    def replacements(self, address):
+    def action_replacements(self, address):
         """
         Replaces certain content within the address
 
         >>> Address.replacements("123 short rd")
         '123 short road'
+
         """
         for replacement in self.replacements:
             primary = replacement[0].lower()
-            pattern = r"\b(?=" + "|".join(re.escape(word.lower()) for word in replacement) + r")\b"
+            pattern = r"\b(?:" + "|".join(re.escape(word.lower()) for word in replacement) + r")\b"
             address = re.sub(pattern, primary, address)
         return address
     
@@ -207,11 +212,26 @@ class Address:
         for character in string.punctuation:
             new_address = new_address.replace(character, " ")
         new_address = new_address.replace("  ", " ")
-        new_address = Address.replacements(new_address)
+        new_address = self.action_replacements(new_address)
         return new_address.strip()
 
+    def _verify(self):
+        """
+        Check the required settings and apply the matched result
+        based on the requirement
+        """
+        if self.threshold_result:
+            self.matched = True
+        
+        if self.postcode_check and not self.postcode_result:
+            self.matched = False
+        
+        if self.state_check and not self.state_result:
+            self.matched = False
+        
+
     @lru_cache(maxsize=500)
-    def address_match(self):
+    def run(self):
         """
         Compares 2 addresses and returns True if certain requirements
         are met
@@ -219,14 +239,14 @@ class Address:
         address1 = self.address_normaliser(self.address1)
         address2 = self.address_normaliser(self.address2)
 
-        if self.postcode:
+        if self.postcode_check:
             address1, address2, match = self.postcode_match(address1, address2)
             if not match:
                 self.postcode_result = False
             else:
                 self.postcode_result = True
         
-        if self.state:
+        if self.state_check:
             address1, address2, match = self.state_match(address1, address2)
             if not match:
                 self.state_result = False
@@ -238,3 +258,9 @@ class Address:
 
         self.address1_result = address1
         self.address2_result = address2
+
+        self._verify()
+
+
+x = Address("U54 Loggins St, Kennytown, QLD 4123", "U54 Loggins St, Kennytown, QLD 4123")
+x.run()
