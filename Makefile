@@ -60,6 +60,8 @@ clean:
 .PHONY: build
 build: clean
 	$(POETRY) build
+	-pip uninstall aussieaddress -y
+	pip install dist/aussieaddress-0.1.0-py3-none-any.whl
 
 .PHONY: publish
 publish: build
