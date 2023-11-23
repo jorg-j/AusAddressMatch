@@ -26,8 +26,41 @@ class Address:
 
         self.match = False
         self.score = 0
+
+        self.set_defaults()
 # %%
-    @staticmethod
+    def set_defaults(self):
+        self.abbreviated_states = ["qld", "nsw", "act", "vic", "tas", "sa", "wa", "nt"]
+        self.state_names = [
+            "queensland",
+            "new south wales",
+            "australian capital territory",
+            "victoria",
+            "tasmania",
+            "south australia",
+            "western australia",
+            "northern territory",
+        ]
+
+        self.replacements = [
+            ["street", "st"],
+            ["road", "rd"],
+            ["close", "cls"],
+            ["court", "crt"],
+            ["avenue", "ave", "av"],
+        ]
+
+        self.removals = [
+            "au",
+            "australia",
+            "apartment",
+            "u",
+            "tower",
+            "unit"
+        ]
+
+
+
     def _clean_str(in_string: str, remove: list) -> str:
         """
         The function `_clean_str` takes a string and a list of items to remove,
@@ -46,7 +79,7 @@ class Address:
 
     # %%
     @staticmethod
-    def postcode_match(address1: str, address2: str) -> Tuple[str, str, bool]:
+    def postcode_match(self, address1: str, address2: str) -> Tuple[str, str, bool]:
         """
         Takes two addresses as input and checks if the last postcode in the
         first address is present in the second address,
@@ -85,8 +118,8 @@ class Address:
 
         if last_postcode1 == last_postcode2:
             return (
-                Address._clean_str(address1, [last_postcode1]),
-                Address._clean_str(address2, [last_postcode1]),
+                self._clean_str(address1, [last_postcode1]),
+                self._clean_str(address2, [last_postcode1]),
                 True,
             )
         return address1, address2, False
@@ -94,7 +127,6 @@ class Address:
 
     # %%
     @lru_cache(maxsize=50)
-    @staticmethod
     def locate_state(address: str, state: str) -> bool:
         phrase = r"\b" + state + r"\b"
         matches = re.findall(phrase, address)
@@ -102,8 +134,7 @@ class Address:
 
 
     # %%
-    @staticmethod
-    def state_match(address1: str, address2: str) -> Tuple[str, str, bool]:
+    def state_match(self, address1: str, address2: str) -> Tuple[str, str, bool]:
         """
         The function `state_match` compares two addresses and determines
         if they contain matching state information.
@@ -126,21 +157,8 @@ class Address:
         ('123 test qld', '123 test', False)
 
         """
-
-        abbreviated_states = ["qld", "nsw", "act", "vic", "tas", "sa", "wa", "nt"]
-        state_names = [
-            "queensland",
-            "new south wales",
-            "australian capital territory",
-            "victoria",
-            "tasmania",
-            "south australia",
-            "western australia",
-            "northern territory",
-        ]
-
-        extended_states = abbreviated_states + state_names
-        extended_abbreviations = state_names + abbreviated_states
+        extended_states = self.abbreviated_states + self.state_names
+        extended_abbreviations = self.state_names + self.abbreviated_states
 
         lookup_array = dict(zip(extended_states, extended_abbreviations))
 
@@ -156,30 +174,22 @@ class Address:
                     return cleaned_address1, cleaned_address2, True
         return address_lower1, address_lower2, False
     
-    @staticmethod
-    def replacements(address):
+
+    def replacements(self, address):
         """
         Replaces certain content within the address
 
         >>> Address.replacements("123 short rd")
         '123 short road'
         """
-        replacements = [
-            ["street", "st"],
-            ["road", "rd"],
-            ["close", "cls"],
-            ["court", "crt"],
-            ["avenue", "ave", "av"],
-        ]
-        for replacement in replacements:
+        for replacement in self.replacements:
             primary = replacement[0].lower()
             pattern = r"\b(?=" + "|".join(re.escape(word.lower()) for word in replacement) + r")\b"
             address = re.sub(pattern, primary, address)
         return address
     
     @lru_cache(maxsize=50)
-    @staticmethod
-    def address_normaliser(address: str)-> str:
+    def address_normaliser(self, address: str)-> str:
         """
         Takes a string and removes banned words and special characters
         As well as lowercases the string
@@ -187,18 +197,10 @@ class Address:
         >>> address_normaliser("Unit 8, Test St, Lipton")
         '8 test st lipton'
         """
-        banned_words = [
-            "au",
-            "australia",
-            "apartment",
-            "u",
-            "tower",
-            "unit"
-        ]
 
         new_address = address.lower()
 
-        for word in banned_words:
+        for word in self.removals:
             phrase = r"\b" + word + r"\b"
             new_address = re.sub(phrase, "", new_address)
         
@@ -214,18 +216,18 @@ class Address:
         Compares 2 addresses and returns True if certain requirements
         are met
         """
-        address1 = Address.address_normaliser(self.address1)
-        address2 = Address.address_normaliser(self.address2)
+        address1 = self.address_normaliser(self.address1)
+        address2 = self.address_normaliser(self.address2)
 
         if self.postcode:
-            address1, address2, match = Address.postcode_match(address1, address2)
+            address1, address2, match = self.postcode_match(address1, address2)
             if not match:
                 self.postcode_result = False
             else:
                 self.postcode_result = True
         
         if self.state:
-            address1, address2, match = Address.state_match(address1, address2)
+            address1, address2, match = self.state_match(address1, address2)
             if not match:
                 self.state_result = False
             else:
