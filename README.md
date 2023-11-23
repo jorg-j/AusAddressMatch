@@ -49,8 +49,27 @@ You can also set the match threshold which by default is 75
 
 ### Updaing Replacements and Removals
 
+To check the current removals
+
+`matcher.removals`
+
+Adding a new removal
+
+`matcher.removals = "Plank"`
 
 
+To check the current replacements
+
+`matcher.replacements`
+
+Adding a new replacement
+
+`matcher.replacements = ["Stroad", "strd"]`
+
+
+Note: with replacements each array is checked individually, with index 0 becoming the replacement value
+
+Ie. `["Street", "st"]` with `123 test st` will become `123 test street`
 
 
 
