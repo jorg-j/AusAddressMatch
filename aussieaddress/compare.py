@@ -1,4 +1,5 @@
 # %%
+from dataclasses import replace
 import re
 import string
 from functools import lru_cache
@@ -47,7 +48,7 @@ class Address:
             "northern territory",
         ]
 
-        self.replacements = [
+        self._replacements = [
             ["street", "st"],
             ["road", "rd"],
             ["close", "cls"],
@@ -55,7 +56,7 @@ class Address:
             ["avenue", "ave", "av"],
         ]
 
-        self.removals = [
+        self._removals = [
             "au",
             "australia",
             "apartment",
@@ -64,6 +65,43 @@ class Address:
             "unit"
         ]
 
+    @property
+    def replacements(self):
+        return self._replacements
+
+    @replacements.setter
+    def replacements(self, val):
+        """
+        Add to replacements
+        """
+        if not isinstance(val, list):
+            raise TypeError("val must be of type List")
+        self._replacements.append(val)
+
+    @replacements.deleter
+    def replacements(self):
+        """
+        Remove replacements
+        """
+        self._replacements = []
+
+    
+    @property
+    def removals(self):
+        return self._removals
+
+    @removals.setter
+    def removals(self, val):
+        """
+        Add value to removals and deduplicate
+        """
+        self._removals.append(val.lower())
+        tmp = set(self._removals)
+        self._removals = list(tmp)
+
+    @removals.deleter
+    def removals(self):
+        self._removals = []
 
 
     def _clean_str(self, in_string: str, remove: list) -> str:
@@ -187,7 +225,7 @@ class Address:
         '123 short road'
 
         """
-        for replacement in self.replacements:
+        for replacement in self._replacements:
             primary = replacement[0].lower()
             pattern = r"\b(?:" + "|".join(re.escape(word.lower()) for word in replacement) + r")\b"
             address = re.sub(pattern, primary, address)
@@ -205,7 +243,7 @@ class Address:
 
         new_address = address.lower()
 
-        for word in self.removals:
+        for word in self._removals:
             phrase = r"\b" + word + r"\b"
             new_address = re.sub(phrase, "", new_address)
         
