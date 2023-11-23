@@ -65,6 +65,13 @@ build: clean
 publish: build
 	$(POETRY) publish
 
+
+.PHONY: env
+env:
+	python3 -m venv env
+	source env/bin/activate
+	pip install -r requirements.txt
+
 .PHONY: help
 help:
 	@echo "Available targets:"
